@@ -1,0 +1,174 @@
+App Name:  OpenBTCAD
+Version:  v0.0.6 API
+Date:  2016-2-3
+Author:  Nate Meronek
+Description:  Module for Blender used to make simple models from a script.
+
+
+
+
+
+### Installation and Basic Usage ###
+#Copy the openbtcad.py file to the Blender Python search path.  You can find a location by running the following commands in Blender.
+import sys
+print(sys.path)
+
+
+#Test the installation by running the following code in the Blender script window.
+import openbtcad as bt
+bt.objAddCylinder("MyNewCyl", (4,3,2))
+
+
+#An external Python editor will be easier to use than the built in editor.  The following commands will run an external Python script in Blender.
+filename = "/home/myusername/example.py"
+exec(compile(open(filename).read(), filename, 'exec'))
+
+
+
+
+
+##### API Documentation #####
+
+### Set/Get 3D Cursor Location ###
+setCursorLocation(location=(0,0,0))
+    Description: Set the 3D Cursor to an exact location.
+    Parameters: Tuple(x,y,z)
+
+    Returns: None
+
+
+getCursorLocation()
+    Description: Get the exact location of the 3D Cursor.
+    Parameters: None
+
+    Returns: Tuple(x,y,z)
+
+
+### Select/Delete Objects ###
+objSelect(objname1="")
+    Description: Select mesh object by name or all mesh objects if not specified.
+    Parameters: String("PartName")
+
+    Returns: None
+
+objUnSelect(objname1="")
+    Description: UnSelect object by name or all objects if not specified.
+    Parameters: String("PartName")
+
+    Returns: None
+
+objDeleteSelected()
+    Description: Deletes all selected objects.
+    Parameters: None
+
+    Returns: None
+
+objDelete(objname1="")
+    Description: Delete mesh object by name or all mesh objects if not specified.
+    Parameters: String("PartName")
+
+    Returns: None
+
+
+### Move/Rotate Objects ###
+objMove(objname1, movement=(0,0,0), setlocation=True)
+    Description: Move object by name to exact location.  Increment object if setlocation is False.
+    Parameters: String("PartName")
+                Tuple(x,y,z)
+                Bool(True/False)
+
+    Returns: None
+
+objRotate(objname1, rotation=(0,0,0), pivot="SELF")
+    Description: Rotate object in degrees.
+    Parameters: String("PartName")
+                Tuple(x,y,z)
+                String("SELF/CENTER/CURSOR")
+
+    Returns: None
+
+### Create Objects ###  All objects are always created at (0,0,0).
+
+objAddPlane(objname1, resize=(1,1,1))
+    Parameters: String("PartName")
+                Tuple(x,y,z)
+
+    Returns: None
+
+objAddCube(objname1, resize=(1,1,1))
+    Parameters: String("PartName")
+                Tuple(x,y,z)
+
+    Returns: None
+
+objAddCircle(objname1, resize=(1,1,1), vertices=32)
+    Parameters: String("PartName")
+                Tuple(x,y,z)
+                Int
+
+    Returns: None
+
+objAddCylinder(objname1, resize=(1,1,1), vertices=32, r1=.5, r2=.5)
+    Parameters: String("PartName")
+                Tuple(x,y,z)
+                Int
+                Float
+                Float
+
+    Returns: None
+
+objAddSphereUV(objname1, resize=(1,1,1))
+    Parameters: String("PartName")
+                Tuple(x,y,z)
+
+    Returns: None
+
+objAddSphereICO(objname1, resize=(1,1,1))
+    Parameters: String("PartName")
+                Tuple(x,y,z)
+
+    Returns: None
+
+
+### Get Object Location ###
+objMax(objname1)
+    Description: Returns max point of object.
+    Parameters: objname1(string)
+
+    Returns: Tuple
+
+objMin(objname1)
+    Description: Returns min point of object.
+    Parameters: 
+
+    Returns: Tuple(x,y,z)
+
+objMid(objname1)
+    Description: Returns mid point of object.
+    Parameters: String, object name
+
+    Returns: Tuple(x,y,z)
+
+
+### Modify Object ###
+objModBool(objname1, objname2, operation='DIFFERENCE')
+    Description: Perform boolean operation on object.
+    Parameters: String("PartNameBeingModified") 
+                String("PartNameUsedForMod")
+                String("DIFFERENCE/UNION/INTERSECT")
+
+    Returns: None
+
+
+### Export Object ###
+objExportSCAD(objname1="", dirpath="", ascii=False, projection=False, cut=False)
+    Needs work....
+
+objExportDXF(objname1="", filepath="", cut=True)
+    Needs work.... but does work.
+    Checks if a line on an object passes the Z0 line.  Only works on objects where walls are at a 90 from Z0 plane.
+    Creates a dxf with the named object in it, or all objects if none are selected.
+    cut is not implemented yet, it only does a cut at Z0
+    
+
+
