@@ -39,6 +39,37 @@ def dxfClose(filepath):
 
 
 #=================================================
+#GCode File Functions
+
+#Open gcode file.
+def gcodeOpen(filepath):
+    f = open(filepath, 'w')
+    f.write('GCodeStart \n')
+    f.close()
+
+
+#Write gcode line.
+def gcodeAddPoint(filepath, point=(0, 0)):
+    f = open(filepath, 'a')
+    f.write('X' + str(line[0]) + ' Y' + str(line[1]) + '\n')
+    f.close()
+
+
+#Write gcode text.
+def gcodeAddText(filepath, teststring)
+    f = open(filepath, 'a')
+    f.write(str(teststring) + '\n')
+    f.close()
+    
+
+#Close gcode file.
+def gcodeClose(filepath):
+    f = open(filepath, 'a')
+    f.write('GCodeEnd \n')
+    f.close()
+
+
+#=================================================
 #OpenBTCAD internal functions.  These functions should only be used by OpenBTCAD itself.
 
 #Returns a pointer to an object based on name.  Some operations need the object pointer.
@@ -696,6 +727,9 @@ def objExportDXF(objname1="", filepath="", cut=True):
         for itm in finallinelist: 
             print(itm)
             dxfAddLine(filepath, (itm[0],itm[1],itm[2],itm[3]))
+            
+            #export gcode file with toolup and tooldown labels
+            
             
     dxfOpen(filepath) #Write DXF Header
     
