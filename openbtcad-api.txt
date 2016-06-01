@@ -165,10 +165,15 @@ objExportSCAD(objname1="", dirpath="", ascii=False, projection=False, cut=False)
     Needs work....
 
 objExportDXF(objname1="", filepath="", cut=True)
-    Needs work.... but does work.
-    Checks if a line on an object passes the Z0 line.  Only works on objects where walls are at a 90 from Z0 plane.
+    Checks if a line on an object passes the Z0 line.
     Creates a dxf with the named object in it, or all objects if none are selected.
     cut is not implemented yet, it only does a cut at Z0
+
+objExportGCODE(objname1="", filepath="", cut=True, roundvalue=5)
+    Checks if a line on an object passes the Z0 line.
+    Creates a gcode file with the named object in it, or all objects if none are selected.
+    cut is not implemented yet, it only does a cut at Z0
+    GCode tool path is the same as the DXF line path.
     
 
 
