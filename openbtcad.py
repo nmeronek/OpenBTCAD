@@ -51,12 +51,12 @@ def gcodeOpen(filepath):
 #Write gcode line.
 def gcodeAddPoint(filepath, point=(0, 0)):
     f = open(filepath, 'a')
-    f.write('X' + str(line[0]) + ' Y' + str(line[1]) + '\n')
+    f.write('X' + str(point[0]) + ' Y' + str(point[1]) + '\n')
     f.close()
 
 
 #Write gcode text.
-def gcodeAddText(filepath, teststring)
+def gcodeAddText(filepath, teststring):
     f = open(filepath, 'a')
     f.write(str(teststring) + '\n')
     f.close()
@@ -110,6 +110,130 @@ def get_override(area_type, region_type):
     #error message if the area or region wasn't found
     raise RuntimeError("Wasn't able to find", region_type," in area ", area_type,
                         "\n Make sure it's open while executing script.")
+                        
+
+
+
+#Function that checks if a line passes Z 0.
+def checkvalues(value1=None, value2=None):
+        if value1 <= 0 <= value2 or value2 <= 0 <= value1:
+            return True
+        else:
+            return False
+            
+            
+                    
+#Function that checks if a number is in range of another number
+def checkrange(value1, value2, valrange=.0001):
+    if value1 >= value2 - valrange and value1 <= value2 + valrange:
+        return True
+    else:
+        return False
+        
+        
+        
+#returns true if point matches
+def checkpoint(xval1, yval1, xval2, yval2):
+    if checkrange(xval1, xval2) == True and checkrange(yval1, yval2) == True:
+        return True
+    else:
+        return False
+        
+        
+
+
+
+def z0xycoords(pointA,pointB):
+	""" Takes two three-dimensional coordinates (x,y,z) in list or tuple form.
+	Computes the x and y coordinates of the line at the z=0 plane.
+	Returns a list of length 2 with the x and y coords.
+	"""
+	if (pointA[2] == 0): #Point A is on the z=0 plane already
+		return pointA
+	elif (pointB[2] == 0 ): #Point B is on the z=0 plane already
+		return pointB
+	elif (pointA[2]*pointB[2] > 0 ): # Both points fall on the same side of the z=0 plane, so we cannot compute an answer
+		return False
+	else:
+		totaldiff = [(pointA[i]-pointB[i]) for i in range(3)] # The differences between the x,y, and z coordinates of the two points
+		xy = [ ( pointA[i] - totaldiff[i]*float(pointA[2])/totaldiff[2]) for i in range(2) ] # in each dimension, endpoint minus (difference times ratio of z)
+		return xy 
+        
+        
+        
+#Return cross section of object through Z0, return each line as tuple x0,y0,x1,y1
+def objLineList(objname):
+    
+    obj = bpy.data.objects[objname]
+    wm = bpy.data.objects[objname].matrix_world
+
+    #Get each polygon out of an object.
+    finallinelist = []
+    for eachpolygon in obj.data.polygons:
+        #get each vertex out of each polygon. add to eachvertexlist. vertex list is re-populated for each polygon.
+        eachvertexlist = []
+        for eachvertex in eachpolygon.vertices:
+            #print(wm * obj.data.vertices[eachvertex].co)
+            #print("Each Vertex in Each Polygon")
+            eachvertexlist.append(wm * obj.data.vertices[eachvertex].co)
+        #print("Each Vertex found and added to list")
+        
+        #create line from each polygon that crosses Z0    
+        prev_vertex = None
+        polygonline = [] 
+        for avertex in eachvertexlist:
+            if prev_vertex == None:
+                prev_vertex = avertex
+                xyvalue = z0xycoords((eachvertexlist[-1][0], eachvertexlist[-1][1], eachvertexlist[-1][2]), (avertex[0], avertex[1], avertex[2]))
+                if xyvalue != False:
+                    polygonline.append(xyvalue)
+                continue
+            else:
+                xyvalue = z0xycoords((prev_vertex[0], prev_vertex[1], prev_vertex[2]), (avertex[0], avertex[1], avertex[2]))
+                if xyvalue != False:
+                    polygonline.append(xyvalue)
+                prev_vertex = avertex
+                
+          
+        if polygonline != []:
+            finallinelist.append((polygonline[0][0], polygonline[0][1], polygonline[1][0], polygonline[1][1]))
+            
+    return finallinelist
+    
+    
+    
+    
+#Sorts line list into toolpath order with section breaks
+def SortLineList(linelist):
+    finallinelist = []
+    newlineset = True
+    matchfound = True
+    while len(linelist) > 0:
+        if newlineset == True:
+            newlineset = False
+            finallinelist.append("NewLineSet")
+            finallinelist.append(linelist[0])
+            linelist.remove(linelist[0])
+            
+        else:
+            matchfound = False
+            for line in linelist:
+                if checkpoint(finallinelist[-1][2], finallinelist[-1][3], line[0], line[1]) == True:
+                    finallinelist.append((line[0], line[1], line[2], line[3]))
+                    linelist.remove(line)
+                    matchfound = True        
+                
+                elif checkpoint(finallinelist[-1][2], finallinelist[-1][3], line[2], line[3]) == True:
+                    finallinelist.append((line[2], line[3], line[0], line[1]))
+                    linelist.remove(line)
+                    matchfound = True
+            
+            if matchfound == False:
+                newlineset = True
+    return finallinelist                
+            
+            
+
 
 
 #=================================================
@@ -620,117 +744,22 @@ def objExportSCAD(objname1="", dirpath="", ascii=False, projection=False, cut=Fa
     f.close()
     
     
+    
+    
 # bt.objExportDXF("Cube", "/home/greendude/testnlm.dxf")
 # bt.objExportDXF("insideclamp", "/home/greendude/testnlm.dxf")
 #Exports a single object as a dxf or all objects if not specified.
 def objExportDXF(objname1="", filepath="", cut=True):
-    
-    
     def exportdxf(objname1=objname1, filepath=filepath, cut=cut):
+        linelist = objLineList(objname1)
+        linelist2 = SortLineList(linelist)
         
-        #Function that checks if a line passes Z 0.
-        def checkvalues(value1=None, value2=None):
-                if value1 <= 0 <= value2 or value2 <= 0 <= value1:
-                    return True
-                else:
-                    return False
-                    
-        #Function that checks if a number is in range of another number
-        def checkrange(value1, value2, valrange=.0001):
-            if value1 >= value2 - valrange and value1 <= value2 + valrange:
-                return True
-            else:
-                return False
+        for itm in linelist2:
+            if itm != "NewLineSet":
+                dxfAddLine(filepath, (itm[0],itm[1],itm[2],itm[3]))
         
         
-        
-
-        obj = bpy.data.objects[objname1]
-        
-        wm = bpy.data.objects[objname1].matrix_world
-        objectlines = [] #List of lines in the object.
-        
-        #For each polygon on an object.
-        for f in obj.data.polygons:
-            elements = []
-            
-            #Add each vertice of the polygon to the elements list.
-            for idx in f.vertices:
-                elements.append(wm * obj.data.vertices[idx].co)
-                
-            
-            prev = None #Create a previous variable.    
-            drawline = []  
-              
-            #Go through each item in elements.
-            for itm in elements:
-                if prev == None:
-                    prev = itm
-                    continue
-                else:
-                    if checkvalues(prev[2], itm[2]) == True:
-                        drawline.append((itm[0],itm[1]))
-                    prev = itm
-                    
-            if checkvalues(elements[0][2], elements[-1][2]) == True:
-                drawline.append((elements[0][0],elements[0][1]))
-            
-            if len(drawline) > 1:
-                objectlines.append(((math.ceil(drawline[0][0]*100000)/100000), (math.ceil(drawline[0][1]*100000)/100000), (math.ceil(drawline[1][0]*100000)/100000), (math.ceil(drawline[1][1]*100000)/100000)))
-                #dxfAddLine(filepath, line=((math.ceil(drawline[0][0]*100)/100), (math.ceil(drawline[0][1]*100)/100), (math.ceil(drawline[1][0]*100)/100), (math.ceil(drawline[1][1]*100)/100)))
-
-        print(" ")
-        print("objectlines")
-        for f in objectlines:
-            print(f)
-        
-        finallinelist = []
-        newlineset = True
-        while len(objectlines) > 0:
-            print(" ")
-            print("While Loop " + str(len(objectlines)))
-            if newlineset == True:
-                print("newlineset = true")
-                print(objectlines[0])
-                finallinelist.append(objectlines[0])
-                objectlines.remove(objectlines[0])
-                newlineset = False
-            
-            else:
-                print("newlineset = false")
-                foundmatch = False
-                for itm in objectlines:
-                    
-                    #if finallinelist[-1][2] == itm[0] and finallinelist[-1][3] == itm[1]:
-                    if checkrange(finallinelist[-1][2], itm[0]) and checkrange(finallinelist[-1][3], itm[1]):
-                        print("First")
-                        print(itm)
-                        foundmatch = True
-                        finallinelist.append((itm[0],itm[1],itm[2],itm[3]))
-                        objectlines.remove(itm)
-                        break 
-                        
-                    #elif finallinelist[-1][2] == itm[2] and finallinelist[-1][3] == itm[3]:
-                    elif checkrange(finallinelist[-1][2], itm[2]) and checkrange(finallinelist[-1][3], itm[3]):
-                        print("Second")
-                        print(itm)
-                        print((itm[2],itm[3],itm[0],itm[1]))
-                        foundmatch = True
-                        finallinelist.append((itm[2],itm[3],itm[0],itm[1]))
-                        objectlines.remove(itm)
-                        break
-                
-                if foundmatch == False:        
-                    newlineset = True
-                    
-        print("Final List")            
-        for itm in finallinelist: 
-            print(itm)
-            dxfAddLine(filepath, (itm[0],itm[1],itm[2],itm[3]))
-            
-            #export gcode file with toolup and tooldown labels
-            
-            
+    
     dxfOpen(filepath) #Write DXF Header
     
     #Call once for each object.
@@ -741,4 +770,41 @@ def objExportDXF(objname1="", filepath="", cut=True):
             exportdxf(ob.name, filepath, cut)
 
     dxfClose(filepath) #Close the DXF file.
+
+
+
+
+
+#bt.objExportGCODE("Cube", "/home/graydude/testfile.gcode")
+#Exports a single object as gcode or all objects if not specified.
+def objExportGCODE(objname1="", filepath="", cut=True, roundvalues=5):
+    def exportgcode(objname1=objname1, filepath=filepath, cut=cut, roundvalues=roundvalues):
+        linelist = objLineList(objname1)
+        linelist2 = SortLineList(linelist)
         
+        newlineset = False
+        for itm in linelist2:
+            if newlineset == True:
+                newlineset = False
+                gcodeAddText(filepath, "toolup")
+                gcodeAddPoint(filepath, (round(itm[0], roundvalues), round(itm[1], roundvalues)))
+                gcodeAddText(filepath, "tooldown")
+                
+            if itm == "NewLineSet":
+                newlineset = True
+                continue
+            else:
+                gcodeAddPoint(filepath, (round(itm[2], roundvalues), round(itm[3], roundvalues)))
+                
+                    
+                    
+    gcodeOpen(filepath) #Write GCode Header
+    
+    #Call once for each object.
+    for ob in bpy.data.objects:
+        if ob.type == 'MESH' and ob.name == objname1:
+            exportgcode(ob.name, filepath, cut)
+        elif ob.type == 'MESH' and objname1 == "":
+            exportgcode(ob.name, filepath, cut)
+    gcodeAddText(filepath, "toolup")
+    gcodeClose(filepath) #Close the GCode file.
