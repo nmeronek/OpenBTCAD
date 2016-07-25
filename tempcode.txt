@@ -1,0 +1,14 @@
+
+bpy.data.materials.new("MyTestMaterial")
+bpy.data.materials['MyTestMaterial'].diffuse_color = (.2,.3,.5)
+bpy.data.objects['mainsideframe'].data.materials.append(bpy.data.materials['MyTestMaterial'])
+
+
+if material doesn't exist, create and set color
+else set color
+
+if material is not assigned to object
+    assign to object
+
+create material of specific name and set color
+

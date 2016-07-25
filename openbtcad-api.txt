@@ -86,6 +86,16 @@ objRotate(objname1, rotation=(0,0,0), pivot="SELF")
                 String("SELF/CENTER/CURSOR")
 
     Returns: None
+    
+    
+objSetMaterial(objname1, color=(1,1,1), transparency=1)
+    Description: Set object color and transparency.
+    Parameters: String("PartName")
+                Tuple(r,g,b)
+                Float
+                
+    Returns: None
+
 
 ### Create Objects ###  All objects are always created at (0,0,0).
 

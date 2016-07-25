@@ -10,6 +10,7 @@
 import bpy
 import math
 
+
 #=================================================
 #DXF File Functions
 
@@ -166,6 +167,8 @@ def objLineList(objname):
     
     obj = bpy.data.objects[objname]
     wm = bpy.data.objects[objname].matrix_world
+    
+    #print("Generate X Section of: " + objname)
 
     #Get each polygon out of an object.
     finallinelist = []
@@ -197,7 +200,7 @@ def objLineList(objname):
           
         if polygonline != []:
             finallinelist.append((polygonline[0][0], polygonline[0][1], polygonline[1][0], polygonline[1][1]))
-            
+    #print("X Section Complete")
     return finallinelist
     
     
@@ -208,7 +211,9 @@ def SortLineList(linelist):
     finallinelist = []
     newlineset = True
     matchfound = True
+    bpy.context.window_manager.progress_begin(0,len(linelist))
     while len(linelist) > 0:
+        bpy.context.window_manager.progress_update(len(linelist))
         if newlineset == True:
             newlineset = False
             finallinelist.append("NewLineSet")
@@ -230,6 +235,7 @@ def SortLineList(linelist):
             
             if matchfound == False:
                 newlineset = True
+    bpy.context.window_manager.progress_end()
     return finallinelist                
             
             
@@ -759,15 +765,18 @@ def objExportDXF(objname1="", filepath="", cut=True):
                 dxfAddLine(filepath, (itm[0],itm[1],itm[2],itm[3]))
         
         
-    
+        
     dxfOpen(filepath) #Write DXF Header
     
     #Call once for each object.
-    for ob in bpy.data.objects:
-        if ob.type == 'MESH' and ob.name == objname1:
-            exportdxf(ob.name, filepath, cut)
-        elif ob.type == 'MESH' and objname1 == "":
-            exportdxf(ob.name, filepath, cut)
+    if objname1 != "":
+        for ob in bpy.data.objects:
+            if ob.type == 'MESH' and ob.name == objname1:
+                exportdxf(ob.name, filepath, cut)
+    else:
+        for ob in bpy.data.objects:
+            if ob.type == 'MESH':
+                exportdxf(ob.name, filepath, cut)
 
     dxfClose(filepath) #Close the DXF file.
 
@@ -778,8 +787,9 @@ def objExportDXF(objname1="", filepath="", cut=True):
 #bt.objExportGCODE("Cube", "/home/graydude/testfile.gcode")
 #Exports a single object as gcode or all objects if not specified.
 def objExportGCODE(objname1="", filepath="", cut=True, roundvalues=5):
-    def exportgcode(objname1=objname1, filepath=filepath, cut=cut, roundvalues=roundvalues):
-        linelist = objLineList(objname1)
+    def exportgcode(objnametemp, filepath=filepath, cut=cut, roundvalues=roundvalues):
+        
+        linelist = objLineList(objnametemp)
         linelist2 = SortLineList(linelist)
         
         newlineset = False
@@ -801,10 +811,15 @@ def objExportGCODE(objname1="", filepath="", cut=True, roundvalues=5):
     gcodeOpen(filepath) #Write GCode Header
     
     #Call once for each object.
-    for ob in bpy.data.objects:
-        if ob.type == 'MESH' and ob.name == objname1:
-            exportgcode(ob.name, filepath, cut)
-        elif ob.type == 'MESH' and objname1 == "":
-            exportgcode(ob.name, filepath, cut)
+    if objname1 != "":
+        for ob in bpy.data.objects:
+            if ob.type == 'MESH' and ob.name == objname1:
+                exportgcode(ob.name, filepath, cut)
+    else:
+        for ob in bpy.data.objects:
+            if ob.type == 'MESH':
+                exportgcode(ob.name, filepath, cut)
+        
+        
     gcodeAddText(filepath, "toolup")
     gcodeClose(filepath) #Close the GCode file.
