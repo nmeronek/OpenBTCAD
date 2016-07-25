@@ -25,6 +25,9 @@ def mysimplepart(objname):
     bt.objModBool(objname, "tempbolt", 'DIFFERENCE')
     bt.objDelete("tempbolt")
     
+    #Set Material Properties
+    bt.objSetMaterial(objname, (.2, .3, .4))
+
     #Move final object back to original position.
     bt.setLocOri(objname, locori)
     bt.objUnSelect()

@@ -92,7 +92,7 @@ objSetMaterial(objname1, color=(1,1,1), transparency=1)
     Description: Set object color and transparency.
     Parameters: String("PartName")
                 Tuple(r,g,b)
-                Float
+                Float --- Not implemented yet
                 
     Returns: None
 

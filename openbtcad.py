@@ -428,6 +428,39 @@ def objResize(objname1, resize=(1,1,1)):
         
     if resize[2] >= 0:
         object1.scale[2] = resize[2]
+
+
+#Change material of object.
+def objSetMaterial(objname1, color=(1,1,1), transparency=1):
+    object1 = objReturnByName(objname1)
+    if object1 == None:
+        print("Bad parameter in objSetMaterial: " + str(objname1) + ", " + str(color) + ", " + str(transparency))
+        print("objname1 does not exist")
+        return
+        
+    if len(color) != 3:
+        print("Bad parameter in objSetMaterial: " + str(objname1) + ", " + str(color) + ", " + str(transparency))
+        print("color must contain a 3 number tuple with values between 0 and 1")
+        return
+    
+    #Place holder, not implemented yet.    
+    if isinstance(transparency, (int, float)) != True or transparency < 0:
+        print("Bad parameter in objSetMaterial: " + str(objname1) + ", " + str(color) + ", " + str(transparency))
+        print("transparency must be a number not less than 0")
+        return
+    
+    tempmaterial = "material-" + objname1    
+        
+    #Create material based on object name if it doesn't exist
+    if bpy.data.materials.get(tempmaterial) == None:
+        bpy.data.materials.new(tempmaterial)
+        
+    #Change material properties
+    bpy.data.materials[tempmaterial].diffuse_color = color
+    
+    #Assign material to object
+    object1.data.materials.append(bpy.data.materials[tempmaterial])
+    
     
 
 #=================================================
